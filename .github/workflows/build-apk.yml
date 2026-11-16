@@ -31,7 +31,18 @@ jobs:
         run: npm install
 
       - name: Create FINORA web assets
-        run: test -s www/index.html
+        run: |
+          mkdir -p www
+          if [ -s www/index.html ]; then
+            echo "FINORA web app found in www."
+          elif [ -s index.html ]; then
+            cp index.html www/index.html
+            echo "FINORA index.html copied successfully."
+          else
+            echo "ERROR: index.html not found in repository root."
+            exit 1
+          fi
+          
 
       - name: Generate Android project
         run: npx cap add android
