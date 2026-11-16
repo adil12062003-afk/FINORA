@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1220">
+<title>FINORA — Personal Finance Management</title>
+<style>
+:root{--bg:#0b1220;--panel:#111c2e;--panel2:#17243a;--line:#26364d;--text:#edf4ff;--muted:#91a3bb;--green:#35d0a0;--red:#ff7185;--blue:#68a8ff;--gold:#f4c66a;--radius:18px}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101b2d 65%,#0b1220);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.app{max-width:1100px;margin:auto;padding:18px 16px 100px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:8px 0 22px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#1f5670,#18334e);display:grid;place-items:center;color:#69e2c1;font-size:25px;font-weight:800;box-shadow:0 8px 25px #0004}
+h1{font-size:22px;letter-spacing:2px;margin:0}.sub{color:var(--muted);font-size:12px}.date{color:var(--muted);font-size:12px;text-align:right}
+h2{font-size:17px;margin:0 0 14px}.section{margin-top:22px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{background:linear-gradient(145deg,#142238,#101a2b);border:1px solid var(--line);border-radius:var(--radius);padding:16px;min-width:0;box-shadow:0 10px 28px #0002}
+.metric-label{font-size:12px;color:var(--muted)}.metric{font-size:clamp(20px,3vw,27px);font-weight:750;margin-top:7px;letter-spacing:-.5px;overflow-wrap:anywhere}.green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--blue)}.gold{color:var(--gold)}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.quick button{border:1px solid var(--line);border-radius:15px;background:#142238;color:var(--text);padding:13px 8px;min-height:82px;font-size:12px}
+.quick .ico{display:block;font-size:22px;margin-bottom:5px}
+.two{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.balance-line{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #26364d}.balance-line:last-child{border:0}
+.pill{font-size:11px;border-radius:99px;padding:4px 9px;background:#26364d;color:#c8d7e9;white-space:nowrap}.pill.pending{background:#59451d;color:#ffda8b}.pill.paid{background:#164a3d;color:#7cf0c4}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:5;background:#0d1728ed;border-top:1px solid var(--line);display:flex;justify-content:center;gap:4px;padding:8px max(8px,env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom));backdrop-filter:blur(15px)}
+nav button{background:transparent;border:0;color:var(--muted);padding:8px 14px;border-radius:12px;font-size:12px;min-width:68px}nav button.active{background:#1b3550;color:#76d9c0}
+.view{display:none}.view.active{display:block}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:12px;padding:10px 14px;background:#244c68;color:white;font-weight:650}.btn.primary{background:linear-gradient(135deg,#1b987d,#16745f)}.btn.ghost{background:#1b2a40;border:1px solid var(--line);color:var(--text)}.btn.danger{background:#6c2b3b}.btn.small{padding:7px 10px;font-size:12px}
+input,select,textarea{width:100%;background:#0d1829;border:1px solid #30415a;color:var(--text);border-radius:11px;padding:11px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#4f9cba}
+label{font-size:12px;color:var(--muted);display:block;margin:10px 0 6px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.formgrid .full{grid-column:1/-1}
+.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:580px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted);font-weight:600;font-size:11px}td strong{font-weight:650}
+.empty{text-align:center;color:var(--muted);padding:25px 10px}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}.toolbar>*{flex:1;min-width:130px}
+.notice{background:#152b3b;border:1px solid #28506a;color:#b8d9ec;padding:12px;border-radius:13px;font-size:12px;margin:12px 0}
+.modal{position:fixed;inset:0;background:#0009;z-index:10;display:none;align-items:flex-end;justify-content:center;padding:12px}.modal.open{display:flex}.dialog{background:#111e31;border:1px solid var(--line);border-radius:22px 22px 16px 16px;padding:18px;width:min(620px,100%);max-height:90vh;overflow:auto}
+.dialoghead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.close{background:#26364d;color:white;border:0;border-radius:10px;padding:6px 11px}
+.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:12px}.tabs button{white-space:nowrap;background:#17243a;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 11px}.tabs button.active{color:#7de4c5;border-color:#267b69}
+.mini{font-size:11px;color:var(--muted)}.positive{color:var(--green)}.negative{color:var(--red)}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.quick{grid-template-columns:repeat(3,minmax(0,1fr))}.two{grid-template-columns:1fr}.app{padding:14px 12px 100px}.card{padding:14px}}
+@media(min-width:761px){.modal{align-items:center}.dialog{border-radius:22px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="logo">F</div><div><h1>FINORA</h1><div class="sub">PERSONAL FINANCE MANAGEMENT</div></div></div>
+ <div class="date" id="today"></div>
+</header>
+
+<main>
+<section class="view active" id="home">
+ <div class="grid" id="metrics"></div>
+ <div class="section">
+  <h2>Quick Add</h2>
+  <div class="quick">
+   <button onclick="openTx('income')"><span class="ico">＋</span>Income</button>
+   <button onclick="openTx('expense')"><span class="ico">−</span>Expense</button>
+   <button onclick="openLoan('given')"><span class="ico">↗</span>Udhaar diya</button>
+   <button onclick="openLoan('taken')"><span class="ico">↙</span>Udhaar liya</button>
+   <button onclick="openTx('game')"><span class="ico">🎮</span>Game earning</button>
+   <button onclick="openTx('trading')"><span class="ico">⌁</span>Trading</button>
+   <button onclick="openTx('cashback')"><span class="ico">◈</span>Cashback</button>
+   <button onclick="openTx('salary')"><span class="ico">▣</span>Salary</button>
+  </div>
+ </div>
+ <div class="section two">
+  <div class="card"><h2>Money Balances</h2><div id="balances"></div></div>
+  <div class="card"><h2>Udhaar Overview</h2><div id="loanSummary"></div><div class="actions" style="margin-top:12px"><button class="btn ghost small" onclick="showView('loans')">View udhaar</button></div></div>
+ </div>
+ <div class="section card"><div class="row"><h2>Recent Transactions</h2><button class="btn ghost small" onclick="showView('history')">View all</button></div><div id="recent"></div></div>
+</section>
+
+<section class="view" id="history">
+ <div class="row"><h2>Transaction History</h2><button class="btn primary" onclick="openTx('expense')">＋ Add entry</button></div>
+ <div class="toolbar"><input id="search" placeholder="Search note or category" oninput="renderHistory()"><select id="filterType" onchange="renderHistory()"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expense</option><option value="trading">Trading</option><option value="cashback">Cashback</option><option value="salary">Salary</option><option value="game">Game earning</option></select><select id="filterMode" onchange="renderHistory()"><option value="all">All modes</option><option>Cash</option><option>Online</option></select></div>
+ <div class="card tablewrap" id="historyTable"></div>
+</section>
+
+<section class="view" id="loans">
+ <div class="row"><h2>Udhaar Management</h2><button class="btn primary" onclick="openLoan('given')">＋ Add udhaar</button></div>
+ <div class="grid" id="loanMetrics" style="margin:14px 0"></div>
+ <div class="notice">Partial payment supported: jitna paisa wapas mile, utna hi receive confirm karein. Baaki amount pending rahega. Confirmation ke baad hi cash/online balance update hoga.</div>
+ <div class="card tablewrap" id="loanTable"></div>
+</section>
+
+<section class="view" id="reports">
+ <h2>Reports</h2>
+ <div class="grid" id="reportMetrics"></div>
+ <div class="section card"><h2>Food & Drinks — Separate Ledger</h2><div id="foodReport"></div></div>
+ <div class="section card"><h2>Game, Trading & Cashback — Separate Ledger</h2><div id="specialReport"></div></div>
+ <div class="section card"><h2>Category Summary</h2><div id="categoryReport"></div></div>
+ <div class="section card"><h2>Monthly Summary</h2><div id="monthlyReport"></div></div>
+</section>
+
+<section class="view" id="settings">
+ <h2>Backup & Settings</h2>
+ <div class="card">
+  <h2>Data Backup</h2><p class="mini">FINORA data is stored on this device/browser. Export a backup regularly. Clearing browser data can remove records.</p>
+  <div class="actions"><button class="btn primary" onclick="exportBackup()">Export backup</button><label class="btn ghost" style="margin:0;cursor:pointer">Import backup<input type="file" accept="application/json" hidden onchange="importBackup(event)"></label><button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
+ </div>
+ <div class="section card"><h2>App Information</h2><p class="mini">FINORA v1.0 · Offline-first personal record keeper.</p><p class="mini">This app records information you enter. It does not connect to banks, UPI apps, brokers, or game platforms.</p><button class="btn danger" onclick="resetData()">Reset all app data</button></div>
+</section>
+</main>
+</div>
+
+<nav>
+ <button class="active" data-view="home" onclick="showView('home')">⌂<br>Home</button>
+ <button data-view="history" onclick="showView('history')">▤<br>History</button>
+ <button data-view="loans" onclick="showView('loans')">⇄<br>Udhaar</button>
+ <button data-view="reports" onclick="showView('reports')">▥<br>Reports</button>
+ <button data-view="settings" onclick="showView('settings')">⚙<br>Settings</button>
+</nav>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+ <div class="dialog">
+  <div class="dialoghead"><h2 id="modalTitle">Add entry</h2><button class="close" onclick="closeModal()">✕</button></div>
+  <div id="modalBody"></div>
+ </div>
+</div>
+
+<script>
+const KEY='finora_v1_data';
+let data=loadData();
+function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||{tx:[],loans:[]}}catch(e){return{tx:[],loans:[]}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function today(){return new Date().toISOString().slice(0,10)}
+document.getElementById('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+function txAmount(t){return Number(t.amount)||0}
+function totals(){
+ let income=0,expense=0,cash=0,online=0;
+ data.tx.forEach(t=>{let a=txAmount(t);if(t.kind==='expense'){expense+=a;if(t.mode==='Cash')cash-=a;else online-=a}else if(t.kind==='income'||t.kind==='cashback'||t.kind==='salary'||t.kind==='game'){income+=a;if(t.mode==='Cash')cash+=a;else online+=a}else if(t.kind==='trading'){income+=a;if(t.mode==='Cash')cash+=a;else online+=a}});
+ data.loans.forEach(l=>{let principal=Number(l.amount)||0;if(l.mode==='Cash'){if(l.direction==='given')cash-=principal;else cash+=principal}else{if(l.direction==='given')online-=principal;else online+=principal}(l.payments||[]).forEach(p=>{let a=Number(p.amount)||0;if(l.direction==='given'){if(p.mode==='Cash')cash+=a;else online+=a}else{if(p.mode==='Cash')cash-=a;else online-=a}})});
+ return{income,expense,cash,online,net:cash+online}
+}
+function loanTotals(){let given=0,taken=0;data.loans.forEach(l=>{let paid=(l.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0),left=Math.max(0,Number(l.amount)-paid);if(l.direction==='given')given+=left;else taken+=left});return{given,taken}}
+function renderHome(){
+ let t=totals(),lt=loanTotals();
+ document.getElementById('metrics').innerHTML=[
+ ['Total Income',money(t.income),'green'],['Total Expense',money(t.expense),'red'],['Cash Balance',money(t.cash),'gold'],['Online Balance',money(t.online),'blue']
+ ].map(x=>`<div class="card"><div class="metric-label">${x[0]}</div><div class="metric ${x[2]}">${x[1]}</div></div>`).join('');
+ document.getElementById('balances').innerHTML=`<div class="balance-line"><span>Cash in hand</span><strong>${money(t.cash)}</strong></div><div class="balance-line"><span>Online / Bank</span><strong>${money(t.online)}</strong></div><div class="balance-line"><span>Combined balance</span><strong class="${t.net>=0?'green':'red'}">${money(t.net)}</strong></div>`;
+ document.getElementById('loanSummary').innerHTML=`<div class="balance-line"><span>Mujhe lene hain</span><strong class="green">${money(lt.given)}</strong></div><div class="balance-line"><span>Mujhe dene hain</span><strong class="red">${money(lt.taken)}</strong></div>`;
+ let recent=[...data.tx].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+ document.getElementById('recent').innerHTML=recent.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Details</th><th>Type</th><th>Amount</th></tr></thead><tbody>${recent.map(t=>`<tr><td>${esc(t.date)}</td><td>${esc(t.category)}<div class="mini">${esc(t.note)}</div></td><td>${esc(labelKind(t.kind))}</td><td class="${t.kind==='expense'?'red':'green'}">${t.kind==='expense'?'-':'+'}${money(t.amount)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Abhi koi transaction nahi hai. Quick Add se pehli entry karein.</div>';
+}
+function labelKind(k){return({income:'Income',expense:'Expense',trading:'Trading',cashback:'Cashback',salary:'Salary',game:'Game Earning'})[k]||k}
+function renderHistory(){
+ let q=(document.getElementById('search')?.value||'').toLowerCase(),kind=document.getElementById('filterType')?.value||'all',mode=document.getElementById('filterMode')?.value||'all';
+ let rows=[...data.tx].filter(t=>(kind==='all'||t.kind===kind)&&(mode==='all'||t.mode===mode)&&(`${t.category} ${t.note}`.toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+ document.getElementById('historyTable').innerHTML=rows.length?`<table><thead><tr><th>Date</th><th>Category / Note</th><th>Type</th><th>Mode</th><th>Amount</th><th></th></tr></thead><tbody>${rows.map(t=>`<tr><td>${esc(t.date)}</td><td><strong>${esc(t.category)}</strong><div class="mini">${esc(t.note)}</div></td><td>${labelKind(t.kind)}</td><td>${esc(t.mode)}</td><td class="${t.kind==='expense'?'red':'green'}">${t.kind==='expense'?'-':'+'}${money(t.amount)}</td><td><button class="btn danger small" onclick="deleteTx('${t.id}')">Delete</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No matching records.</div>';
+}
+function renderLoans(){
+ let lt=loanTotals();document.getElementById('loanMetrics').innerHTML=[['Mujhe lene hain',lt.given,'green'],['Mujhe dene hain',lt.taken,'red']].map(x=>`<div class="card"><div class="metric-label">${x[0]}</div><div class="metric ${x[2]}">${money(x[1])}</div></div>`).join('');
+ let rows=[...data.loans].sort((a,b)=>b.date.localeCompare(a.date));
+ document.getElementById('loanTable').innerHTML=rows.length?`<table><thead><tr><th>Name / Date</th><th>Direction</th><th>Original</th><th>Received / Paid</th><th>Pending</th><th>Status / Action</th></tr></thead><tbody>${rows.map(l=>{let paid=(l.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0),left=Math.max(0,l.amount-paid),status=left<=0?'Paid':'Pending';return `<tr><td><strong>${esc(l.name)}</strong><div class="mini">${esc(l.date)} · ${esc(l.note)}</div></td><td>${l.direction==='given'?'Maine diya':'Maine liya'}</td><td>${money(l.amount)}</td><td>${money(paid)}</td><td class="${left?'gold':'green'}">${money(left)}</td><td><span class="pill ${status.toLowerCase()}">${status}</span>${left>0?`<div style="margin-top:7px"><button class="btn primary small" onclick="openPayment('${l.id}')">＋ Payment</button></div>`:''}<div style="margin-top:5px"><button class="btn danger small" onclick="deleteLoan('${l.id}')">Delete</button></div></td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Abhi koi udhaar record nahi hai.</div>';
+}
+function renderReports(){
+ let t=totals();document.getElementById('reportMetrics').innerHTML=[['Income',t.income,'green'],['Expense',t.expense,'red'],['Net cash + online',t.net,t.net>=0?'green':'red'],['Pending udhaar',loanTotals().given+loanTotals().taken,'gold']].map(x=>`<div class="card"><div class="metric-label">${x[0]}</div><div class="metric ${x[2]}">${money(x[1])}</div></div>`).join('');
+ let cats={};data.tx.forEach(x=>{let k=x.category||labelKind(x.kind);cats[k]=(cats[k]||0)+(x.kind==='expense'?-Number(x.amount):Number(x.amount))});
+ let arr=Object.entries(cats).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+ let food=data.tx.filter(x=>x.category==='Food & Drinks');
+ document.getElementById('foodReport').innerHTML=food.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Details</th><th>Mode</th><th>Amount</th></tr></thead><tbody>${food.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.note||'Food & Drinks')}</td><td>${esc(x.mode)}</td><td class="red">${money(x.amount)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Food & Drinks entries yahan alag dikhengi.</div>';
+ let special=data.tx.filter(x=>['trading','cashback','game'].includes(x.kind)||x.category==='Trading Loss');
+ document.getElementById('specialReport').innerHTML=special.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Mode</th><th>Amount</th></tr></thead><tbody>${special.sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.category)}</td><td>${esc(x.mode)}</td><td class="${x.kind==='expense'?'red':'green'}">${x.kind==='expense'?'-':'+'}${money(x.amount)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Game, Trading & Cashback entries yahan alag dikhengi.</div>';
+ document.getElementById('categoryReport').innerHTML=arr.length?arr.map(([k,v])=>`<div class="balance-line"><span>${esc(k)}</span><strong class="${v>=0?'green':'red'}">${money(v)}</strong></div>`).join(''):'<div class="empty">Entries add karne ke baad report dikhegi.</div>';
+ let months={};data.tx.forEach(x=>{let m=x.date.slice(0,7);months[m]??={income:0,expense:0};if(x.kind==='expense')months[m].expense+=Number(x.amount);else months[m].income+=Number(x.amount)});
+ document.getElementById('monthlyReport').innerHTML=Object.keys(months).sort().reverse().map(m=>`<div class="balance-line"><span>${m}</span><span><b class="green">${money(months[m].income)}</b> / <b class="red">${money(months[m].expense)}</b></span></div>`).join('')||'<div class="empty">No monthly data yet.</div>';
+}
+function renderAll(){renderHome();renderHistory();renderLoans();renderReports()}
+function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));window.scrollTo(0,0)}
+function openModal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+const categories={income:['Personal Income','Gift','Other Income'],game:['Game Earning'],expense:['Food & Drinks','Travel','Shopping','Bills','College / Education','Health','Other Expense'],trading:['Trading Profit','Trading Loss'],cashback:['Cashback','Reward','Offer'],salary:['Job Salary','Bonus','Incentive']};
+function openTx(kind){
+ let title=kind==='trading'?'Add Trading Result':kind==='cashback'?'Add Cashback':kind==='salary'?'Add Salary':kind==='income'?'Add Income':'Add Expense';
+ let opts=(categories[kind]||[]).map(x=>`<option>${x}</option>`).join('');
+ openModal(title,`<form onsubmit="saveTx(event,'${kind}')"><div class="formgrid">
+ <div><label>Date</label><input name="date" type="date" value="${today()}" required></div>
+ <div><label>Amount (₹)</label><input name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div>
+ <div><label>Category</label><select name="category">${opts}</select></div>
+ <div><label>Payment mode</label><select name="mode"><option>Cash</option><option>Online</option></select></div>
+ <div class="full"><label>Note (optional)</label><input name="note" placeholder="e.g. Lunch, UPI cashback, salary for November"></div>
+ </div><div class="notice">Trading loss ko “Trading Loss” category mein expense ke roop mein record karein. Profit ko “Trading Profit” mein income ke roop mein record karein.</div><button class="btn primary" style="width:100%">Save entry</button></form>`);
+}
+function saveTx(e,kind){e.preventDefault();let f=new FormData(e.target),category=f.get('category'),actualKind=kind;if(kind==='trading'&&category==='Trading Loss')actualKind='expense';if(kind==='trading'&&category==='Trading Profit')actualKind='trading';data.tx.push({id:crypto.randomUUID(),kind:actualKind,date:f.get('date'),amount:Number(f.get('amount')),category,mode:f.get('mode'),note:f.get('note')});save();closeModal()}
+function openLoan(direction){openModal(direction==='given'?'Record Money Lent':'Record Money Borrowed',`<form onsubmit="saveLoan(event,'${direction}')"><div class="formgrid">
+ <div class="full"><label>Person name</label><input name="name" placeholder="Enter person's name" required></div>
+ <div><label>Amount (₹)</label><input name="amount" type="number" min="0.01" step="0.01" required></div>
+ <div><label>Date</label><input name="date" type="date" value="${today()}" required></div>
+ <div><label>Payment mode</label><select name="mode"><option>Cash</option><option>Online</option></select></div>
+ <div><label>Mobile (optional)</label><input name="phone" type="tel" placeholder="Phone number"></div>
+ <div class="full"><label>Note (optional)</label><input name="note" placeholder="Reason / details"></div>
+ </div><div class="notice">${direction==='given'?'Jab tak saamne wala payment wapas nahi karta, amount “Mujhe lene hain” mein pending rahega.':'Borrowed amount ko “Mujhe dene hain” mein pending rakha jayega. Repayment karte waqt payment confirm karein.'}</div><button class="btn primary" style="width:100%">Save udhaar</button></form>`)}
+function saveLoan(e,direction){e.preventDefault();let f=new FormData(e.target);data.loans.push({id:crypto.randomUUID(),direction,name:f.get('name'),amount:Number(f.get('amount')),date:f.get('date'),mode:f.get('mode'),phone:f.get('phone'),note:f.get('note'),payments:[]});save();closeModal()}
+function openPayment(id){let l=data.loans.find(x=>x.id===id);if(!l)return;let paid=l.payments.reduce((s,p)=>s+Number(p.amount),0),left=l.amount-paid;openModal(l.direction==='given'?'Confirm money received':'Confirm money repaid',`<div class="notice"><b>${esc(l.name)}</b> · Original ${money(l.amount)} · Already ${money(paid)} · Pending ${money(left)}</div><form onsubmit="savePayment(event,'${id}')"><div class="formgrid"><div><label>${l.direction==='given'?'Amount received':'Amount repaid'} (₹)</label><input name="amount" type="number" min="0.01" max="${left}" step="0.01" value="${left}" required></div><div><label>Date</label><input name="date" type="date" value="${today()}" required></div><div><label>Received / paid through</label><select name="mode"><option>Cash</option><option>Online</option></select></div><div><label>Note (optional)</label><input name="note" placeholder="Part payment / final payment"></div></div><p class="mini">Save karne par sirf entered amount confirm hoga. Remaining amount pending rahega.</p><button class="btn primary" style="width:100%">Confirm payment</button></form>`)}
+function savePayment(e,id){e.preventDefault();let l=data.loans.find(x=>x.id===id);if(!l)return;let f=new FormData(e.target),amount=Number(f.get('amount')),paid=l.payments.reduce((s,p)=>s+Number(p.amount),0),left=l.amount-paid;if(amount<=0||amount>left){alert('Amount pending balance se zyada nahi ho sakta.');return}if(!confirm(`Confirm ${money(amount)} ${l.direction==='given'?'received':'repaid'}?`))return;l.payments.push({id:crypto.randomUUID(),amount,date:f.get('date'),mode:f.get('mode'),note:f.get('note')});save();closeModal()}
+function deleteTx(id){if(confirm('Delete this transaction?')){data.tx=data.tx.filter(x=>x.id!==id);save()}}
+function deleteLoan(id){if(confirm('Delete this udhaar and its payment history?')){data.loans=data.loans.filter(x=>x.id!==id);save()}}
+function exportBackup(){download('finora-backup-'+today()+'.json',JSON.stringify(data,null,2),'application/json')}
+function importBackup(e){let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!Array.isArray(d.tx)||!Array.isArray(d.loans))throw 0;if(confirm('Import backup? Current app data will be replaced.')){data=d;save();alert('Backup imported successfully.')}}catch(x){alert('Invalid FINORA backup file.')}};r.readAsText(file)}
+function exportCSV(){let lines=[['Date','Type','Category / Person','Amount','Mode','Note'],...data.tx.map(t=>[t.date,labelKind(t.kind),t.category,t.amount,t.mode,t.note])];data.loans.forEach(l=>{lines.push([l.date,l.direction==='given'?'Udhaar diya':'Udhaar liya',l.name,l.amount,l.mode,l.note||'Original loan']);(l.payments||[]).forEach(p=>lines.push([p.date,l.direction==='given'?'Udhaar received':'Udhaar repaid',l.name,p.amount,p.mode,p.note||'Repayment']));});let csv=lines.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');download('finora-full-ledger-'+today()+'.csv',csv,'text/csv')}
+function download(name,content,type){let a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function resetData(){if(confirm('All FINORA data will be permanently deleted from this browser. Continue?')&&confirm('Are you absolutely sure?')){data={tx:[],loans:[]};save()}}
+renderAll();
+</script>
+</body>
+</html>
