@@ -30,6 +30,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Create FINORA web assets
+        run: |
+          mkdir -p www
+          if [ -f index.html ]; then
+            cp index.html www/index.html
+          elif [ ! -f www/index.html ]; then
+            echo "ERROR: FINORA index.html not found"
+            exit 1
+          fi
+          test -s www/index.html
+          
       - name: Generate Android project
         run: npx cap add android
 
