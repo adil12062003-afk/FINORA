@@ -47,9 +47,6 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Patch Android MainActivity for Google Drive scopes
-        run: python3 scripts/patch-social-login.py
-
       - name: Copy FINORA web app into Android project
         run: npx cap sync android
 
