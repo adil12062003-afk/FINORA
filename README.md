@@ -40,3 +40,23 @@ The current app stores records in browser-style local storage on the device. Exp
 - Pending loan balance is original principal less confirmed repayments.
 
 Please test with small sample amounts before entering real records. Keep a backup before updating the app.
+
+
+## Google Drive integration setup (required before testing sign-in)
+
+FINORA now includes an account-separated Drive sync interface using the Google Drive `appDataFolder` scope. Each Google account has its own private app-data area; the app stores each account's local ledger under a separate local key. The app requests only the `drive.appdata` scope plus basic identity scopes.
+
+Before building the APK:
+
+1. In Google Cloud Console, create a project and enable the Google Drive API. Configure the OAuth consent screen / Google Auth Platform.
+2. Create a **Web application OAuth client ID** and replace `YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com` in `www/index.html` with that value. Do not put a client secret in the app.
+3. Create an **Android OAuth client** with package name `com.finora.finance` and the SHA-1 certificate fingerprint used to sign the APK. For GitHub Actions debug APKs, obtain the debug keystore SHA-1 from a locally generated Android debug keystore or use Android Studio/Gradle signing report for the same build configuration. Add each signing certificate fingerprint you use.
+4. Build a new APK and install it. Google sign-in will not work in the older APK.
+
+### Sync behaviour and limitations
+
+- Drive backups are stored in the signed-in account's private `appDataFolder`, not in a visible user folder.
+- Connect / Switch Google account to select a different Google account. Each account has a separate ledger.
+- Automatic upload is attempted after a record is saved while a valid Google access token is available. Access tokens expire; when that happens, reconnect the account to authorize again. This starter implementation does not provide background sync while the app is closed.
+- When a newer cloud backup is detected, FINORA asks before replacing local data. Avoid editing the same account's data on two devices simultaneously until conflict-safe merge support is added.
+- Keep manual JSON backups too. This integration is a first implementation and has not yet been verified against a real Google OAuth project or a physical Android device.

@@ -97,11 +97,22 @@ label{font-size:12px;color:var(--muted);display:block;margin:10px 0 6px}
 
 <section class="view" id="settings">
  <h2>Backup & Settings</h2>
+ <div class="card" id="googleDriveCard">
+  <h2>Google Drive Cloud Sync</h2>
+  <p class="mini">Connect multiple Google accounts. Each account has its own separate FINORA data in that account’s private Drive app-data area.</p>
+  <div id="googleAccountStatus" class="notice">Not connected. Connect a Google account to enable cloud backup.</div>
+  <div class="actions">
+   <button class="btn primary" onclick="connectGoogleAccount()">＋ Connect / Switch Google account</button>
+   <button class="btn ghost" onclick="syncGoogleNow()">Sync now</button>
+   <button class="btn ghost" onclick="disconnectGoogleAccount()">Disconnect</button>
+  </div>
+  <p class="mini" id="googleSyncStatus">Automatic sync starts after you connect and authorize a Google account. A network connection is required.</p>
+ </div>
  <div class="card">
   <h2>Data Backup</h2><p class="mini">FINORA data is stored on this device/browser. Export a backup regularly. Clearing browser data can remove records.</p>
   <div class="actions"><button class="btn primary" onclick="exportBackup()">Export backup</button><label class="btn ghost" style="margin:0;cursor:pointer">Import backup<input type="file" accept="application/json" hidden onchange="importBackup(event)"></label><button class="btn ghost" onclick="exportCSV()">Export CSV</button></div>
  </div>
- <div class="section card"><h2>App Information</h2><p class="mini">FINORA v1.0 · Offline-first personal record keeper.</p><p class="mini">This app records information you enter. It does not connect to banks, UPI apps, brokers, or game platforms.</p><button class="btn danger" onclick="resetData()">Reset all app data</button></div>
+ <div class="section card"><h2>App Information</h2><p class="mini">FINORA v1.1 · Offline-first with optional Google Drive account sync.</p><p class="mini">This app records information you enter. It does not connect to banks, UPI apps, brokers, or game platforms.</p><button class="btn danger" onclick="resetData()">Reset all app data</button></div>
 </section>
 </main>
 </div>
@@ -123,9 +134,18 @@ label{font-size:12px;color:var(--muted);display:block;margin:10px 0 6px}
 
 <script>
 const KEY='finora_v1_data';
+const ACCOUNT_INDEX_KEY='finora_google_accounts_v1';
+const GOOGLE_WEB_CLIENT_ID='YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
+let googleSession=null;
+let activeGoogleAccount=null;
 let data=loadData();
+function accountDataKey(email){return KEY+'_'+String(email||'').toLowerCase().replace(/[^a-z0-9@._-]/g,'_')}
 function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||{tx:[],loans:[]}}catch(e){return{tx:[],loans:[]}}}
-function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function loadAccountData(email){try{return JSON.parse(localStorage.getItem(accountDataKey(email)))||{tx:[],loans:[]}}catch(e){return{tx:[],loans:[]}}}
+function save(){localStorage.setItem(activeGoogleAccount?accountDataKey(activeGoogleAccount.email):KEY,JSON.stringify(data));if(activeGoogleAccount)localStorage.setItem('finora_local_updated_'+activeGoogleAccount.email,String(Date.now()));renderAll();if(activeGoogleAccount&&googleSession?.accessToken)scheduleDriveSync()}
+let driveSyncTimer=null;
+function scheduleDriveSync(){clearTimeout(driveSyncTimer);driveSyncTimer=setTimeout(()=>syncGoogleNow(true),1200)}
 function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -171,6 +191,34 @@ function renderReports(){
  let months={};data.tx.forEach(x=>{let m=x.date.slice(0,7);months[m]??={income:0,expense:0};if(x.kind==='expense')months[m].expense+=Number(x.amount);else months[m].income+=Number(x.amount)});
  document.getElementById('monthlyReport').innerHTML=Object.keys(months).sort().reverse().map(m=>`<div class="balance-line"><span>${m}</span><span><b class="green">${money(months[m].income)}</b> / <b class="red">${money(months[m].expense)}</b></span></div>`).join('')||'<div class="empty">No monthly data yet.</div>';
 }
+function googlePlugin(){return window.Capacitor?.Plugins?.SocialLogin||null}
+function setDriveStatus(message,isError=false){let el=document.getElementById('googleAccountStatus');if(el){el.textContent=message;el.style.borderColor=isError?'#8c4050':'#28506a';el.style.color=isError?'#ff9aaa':'#b8d9ec'}}
+function setSyncStatus(message){let el=document.getElementById('googleSyncStatus');if(el)el.textContent=message}
+async function connectGoogleAccount(){
+ try{
+  if(GOOGLE_WEB_CLIENT_ID.startsWith('YOUR_')){alert('Google setup pending: pehle Google Cloud Console ka Web OAuth Client ID configure karna hoga.');return}
+  const plugin=googlePlugin();if(!plugin){alert('Google Sign-In native plugin APK mein abhi available nahi hai. Updated Android build install karna hoga.');return}
+  await plugin.initialize({google:{webClientId:GOOGLE_WEB_CLIENT_ID}});
+  const response=await plugin.login({provider:'google',options:{scopes:[DRIVE_SCOPE]}});
+  const result=response.result||response;
+  const email=result.profile?.email||result.email;const token=result.accessToken?.token||result.accessToken;if(!email||!token)throw new Error('Google account email/access token missing. Drive permission approve karke dobara try karein.');
+  googleSession={accessToken:token};activeGoogleAccount={email,name:result.profile?.name||result.displayName||email};
+  const idx=JSON.parse(localStorage.getItem(ACCOUNT_INDEX_KEY)||'[]');if(!idx.some(x=>x.email.toLowerCase()===email.toLowerCase()))idx.push({email,name:activeGoogleAccount.name});localStorage.setItem(ACCOUNT_INDEX_KEY,JSON.stringify(idx));
+  data=localStorage.getItem(accountDataKey(email))?loadAccountData(email):loadData();renderAll();setDriveStatus('Connected: '+email+' · This Google account has its own separate FINORA ledger.');setSyncStatus('Google account connected. Uploading / restoring this account’s Drive backup…');await syncGoogleNow(true);
+ }catch(e){console.error(e);setDriveStatus('Google connection failed: '+(e.message||String(e)),true);alert('Google connection failed: '+(e.message||String(e)))}
+}
+async function driveRequest(path,options={}){if(!googleSession?.accessToken)throw new Error('Google session expired. Connect the account again.');let r=await fetch('https://www.googleapis.com/drive/v3/'+path,{...options,headers:{Authorization:'Bearer '+googleSession.accessToken,...(options.headers||{})}});if(r.status===401){googleSession=null;throw new Error('Google permission expired. Connect the same account again to continue syncing.')}if(!r.ok)throw new Error('Google Drive API error '+r.status+': '+(await r.text()).slice(0,250));return r.status===204?null:r.json()}
+async function findDriveBackup(){let q=encodeURIComponent("name='finora-backup.json' and trashed=false");let r=await driveRequest('files?spaces=appDataFolder&q='+q+'&fields=files(id,name,modifiedTime)&pageSize=10');return r.files?.[0]||null}
+async function uploadDriveBackup(fileId){let metadata={name:'finora-backup.json',parents:fileId?undefined:['appDataFolder'],mimeType:'application/json'};let boundary='finora_'+Date.now();let body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+'\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+JSON.stringify({schema:1,email:activeGoogleAccount.email,updatedAt:new Date().toISOString(),data})+'\r\n--'+boundary+'--';let url=fileId?'https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart':'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';let r=await fetch(url,{method:fileId?'PATCH':'POST',headers:{Authorization:'Bearer '+googleSession.accessToken,'Content-Type':'multipart/related; boundary='+boundary},body});if(!r.ok)throw new Error('Drive upload failed '+r.status+': '+(await r.text()).slice(0,250));return r.json()}
+async function syncGoogleNow(silent=false){
+ if(!activeGoogleAccount||!googleSession?.accessToken){if(!silent)alert('Pehle Google account connect karein.');return}
+ try{setSyncStatus('Checking Google Drive backup…');let file=await findDriveBackup();if(file){let meta=await driveRequest('files/'+file.id+'?alt=media');if(meta?.data){let localStamp=Number(localStorage.getItem('finora_local_updated_'+activeGoogleAccount.email)||0),cloudStamp=Date.parse(meta.updatedAt||0)||0;if(cloudStamp>localStamp&&confirm('Is Google account ke Drive backup mein newer data hai. Cloud data restore karna hai? Current local data replace hoga.')){data=meta.data;localStorage.setItem(accountDataKey(activeGoogleAccount.email),JSON.stringify(data));renderAll();}else if(!localStamp){data=meta.data;localStorage.setItem(accountDataKey(activeGoogleAccount.email),JSON.stringify(data));renderAll();}}
+  }
+  let uploaded=await uploadDriveBackup(file?.id);localStorage.setItem('finora_local_updated_'+activeGoogleAccount.email,String(Date.now()));setSyncStatus('Last synced: '+new Date().toLocaleString('en-IN')+' · '+activeGoogleAccount.email);setDriveStatus('Connected: '+activeGoogleAccount.email+' · Drive backup is up to date.');
+ }catch(e){console.error(e);setSyncStatus(e.message||String(e));if(!silent)alert('Sync nahi ho paya: '+(e.message||String(e)))}
+}
+function disconnectGoogleAccount(){if(!activeGoogleAccount)return;let email=activeGoogleAccount.email;googleSession=null;activeGoogleAccount=null;data=loadData();renderAll();setDriveStatus('Disconnected from '+email+'. Local data remains on this device.');setSyncStatus('Connect a Google account to sync its separate ledger.')}
+
 function renderAll(){renderHome();renderHistory();renderLoans();renderReports()}
 function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.view===v));window.scrollTo(0,0)}
 function openModal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modal').classList.add('open')}
