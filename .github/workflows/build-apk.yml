@@ -12,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -39,18 +40,20 @@ jobs:
             cp index.html www/index.html
             echo "FINORA index.html copied successfully."
           else
-            echo "ERROR: index.html not found in repository root."
+            echo "ERROR: index.html not found."
             exit 1
           fi
-          
 
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Configure Google Social Login
+        run: python3 patch-social-login.py
+
       - name: Copy FINORA web app into Android project
         run: npx cap sync android
 
-      - name: Pin AndroidX Browser to API-35-compatible version
+      - name: Pin AndroidX Browser version
         run: |
           printf "\nconfigurations.configureEach {\n    resolutionStrategy.force 'androidx.browser:browser:1.8.0'\n}\n" >> android/app/build.gradle
 
